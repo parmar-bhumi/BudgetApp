@@ -8,7 +8,6 @@ export const Home = () => {
     const incomes = useSelector((state:RootState)=>state.incomes.transactions);
     const totalIncomes = incomes.reduce((total,item)=> total + Number(item.amount),0);
 
-
     return (
         <>
             <div className="md:ml-72 text-gray-300 p-2">

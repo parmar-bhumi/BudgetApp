@@ -33,7 +33,7 @@ export function AppSidebar() {
   const [name, setName] = useState(localStorage.getItem("userName") || "");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [email, setEmail] = useState(localStorage.getItem("email") || "");
+  const [email, setEmail] = useState(localStorage.getItem("userEmail") || "");
 
   const handleLogout = () => {
     localStorage.clear();
@@ -52,7 +52,7 @@ export function AppSidebar() {
     }
     localStorage.setItem("userName", name);
     if (password) localStorage.setItem("userPassword", password); 
-    localStorage.setItem("email",email);
+    localStorage.setItem("useremail",email);
     setIsFormOpen(false);
     alert("Profile updated!");
     window.location.reload(); 

@@ -7,7 +7,7 @@ const ProtectedRoute = () => {
   return token ? (
     <Outlet />
   ) : (
-    <Navigate to="/login" state={{ from: location.pathname }} replace />
+    <Navigate to="/home" state={{ from: location.pathname }} replace />
   );
 };
 

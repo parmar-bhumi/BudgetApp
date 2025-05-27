@@ -68,6 +68,7 @@ const AuthForm = () => {
         localStorage.setItem("userName", response.data.user.name);
 
         navigate(redirectTo, { replace: true });
+        window.location.reload();
 
       } catch (error: any) {
         console.error("Login/Register error:", error.response?.data || error.message);
