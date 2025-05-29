@@ -20,7 +20,7 @@ const transactionsSlice = createSlice({
   name: "transactions",
   initialState,
   reducers: {
-    setTransactions: (state, action: PayloadAction<Transaction[]>) => {
+    showTransactions: (state, action: PayloadAction<Transaction[]>) => {
       state.transactions = action.payload;
       localStorage.setItem("expenses", JSON.stringify(action.payload));
     },
@@ -42,5 +42,5 @@ const transactionsSlice = createSlice({
   },
 });
 
-export const { setTransactions, addTransaction, deleteTransaction, updateTransaction } = transactionsSlice.actions;
+export const { showTransactions, addTransaction, deleteTransaction, updateTransaction } = transactionsSlice.actions;
 export default transactionsSlice.reducer;

@@ -3,7 +3,7 @@ import { Chart } from './ChartConfig';
 import * as XLSX from 'xlsx';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../store';
-import { addTransaction, deleteTransaction, updateTransaction } from '../features/ReduxSlice';
+import { addTransaction, deleteTransaction, showTransactions, updateTransaction } from '../features/ReduxSlice';
 import { useFormik } from 'formik';
 import { signUpSchema } from '@/schema';
 import axios from 'axios';
@@ -29,9 +29,6 @@ export const Expenses = () => {
   const dispatch = useDispatch();
   const [edit, setEdit] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  // const [amount, setAmount] = useState<number | string>("");
-  // const [date, setDate] = useState<string>("");
-  // const [category, setCategory] = useState("");
 
   useEffect(() => {
     localStorage.setItem("expenses", JSON.stringify(transactions));
@@ -49,9 +46,8 @@ export const Expenses = () => {
         category: values.category,
       };
 
-      const token = localStorage.getItem("token"); 
-      // console.log(token);
-      
+      const token = localStorage.getItem("token");
+
       if (!token) {
         alert("User not authenticated!");
         return;
@@ -59,22 +55,30 @@ export const Expenses = () => {
 
       try {
         if (edit !== null) {
-          await axios.put(`${import.meta.env.VITE_APP_BASE_URL}/expenses/update-expense/${edit}`,transaction);
-          dispatch(updateTransaction(transaction));
+          const res = await axios.put(`${import.meta.env.VITE_APP_BASE_URL}/update-expense/${edit}`, transaction, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          dispatch(updateTransaction(res.data));
           setEdit(null)
         } else {
-          const response = await axios.post(`${import.meta.env.VITE_APP_BASE_URL}/expenses/add-expense`, transaction,{
-            headers:{
-              Authorization:`Bearer ${token}`,
+          const response = await axios.post(`${import.meta.env.VITE_APP_BASE_URL}/add-expense`, transaction, {
+            headers: {
+              Authorization: `Bearer ${token}`,
             },
           })
           dispatch(addTransaction(response.data));
         }
+        //show data
+        const response = await axios.get(`${import.meta.env.VITE_APP_BASE_URL}/get-expenses`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        console.log("Data fetched:", response.data);
+        dispatch(showTransactions(response.data));
         actions.resetForm();
-      } catch (error) {
-        console.error("Api error",error);
       }
-      // actions.resetForm();
+      catch (error) {
+        console.error("Api error", error);
+      }
     }
   })
 
@@ -87,19 +91,29 @@ export const Expenses = () => {
 
   const handleEdit = (t: Transaction) => {
     formik.setValues({
+      // _id: number,
       description: t.description,
       amount: t.amount.toString(),
       date: t.date,
       category: t.category,
     });
-    setEdit(t.id);
+    // setEdit(t.id);
   };
 
-  const handleDelete = (id: number) => {
-    const isConfirmed = window.confirm("Are you sure to want to delete this Expenses ?");
-    if (isConfirmed) {
-      dispatch(deleteTransaction(id));
-    }
+  const handleDelete = async (_id: string) => {
+    // console.log(id);
+    const token = localStorage.getItem("token");
+    const response = await axios.delete(`${import.meta.env.VITE_APP_BASE_URL}/delete-expense/${_id}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    )
+    // const isConfirmed = window.confirm("Are you sure to want to delete this Expenses ?");
+    // if (isConfirmed) {
+    dispatch(deleteTransaction(response.data));
+    // }
   };
 
   const filteredExp = searchQuery.length > 0 ? transactions.filter((expense: { description: string; category: string; }) =>
@@ -116,6 +130,15 @@ export const Expenses = () => {
   }, {} as Record<string, number>);
 
   const chartData = Object.entries(expDataByCategory).map(([name, value]) => ({ name, value }));
+
+  const formatDateForInput = (value: string | number | Date) => {
+    const date = new Date(value);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
 
   return (
     <div className='max-w-4xl mx-auto p-4 md:ml-90'>
@@ -151,12 +174,13 @@ export const Expenses = () => {
         <div className='flex flex-col md:flex-row md:space-x-4 space-y-4 md:space-y-0'>
           <div className='w-full'>
             <label className='block mb-1 font-medium text-gray-400'>Date :</label>
-            <input type="date" name='date' value={formik.values.date} onChange={formik.handleChange} onBlur={formik.handleBlur} className={`w-full border p-2 rounded text-gray-300 ${formik.errors.date ? 'border-red-500' : ''}`} />
+            <input type="date" name='date' value={formik.values.date ? formatDateForInput(formik.values.date) : ''} onChange={formik.handleChange} onBlur={formik.handleBlur} className={`w-full border p-2 rounded text-gray-300 ${formik.errors.date ? 'border-red-500' : ''}`} />
             {formik.errors.date && formik.touched.date ? (<p className='text-red-500'>{formik.errors.date}</p>) : null}
           </div>
+
           <div className='w-full'>
             <label className='block mb-1 font-medium text-gray-400'>Category : </label>
-            <select value={formik.values.category} onChange={formik.handleChange} onBlur={formik.handleBlur} name='category' className={`w-full border p-2 rounded text-gray-200 ${formik.errors.category ? 'border-red-500' : ''}`}>
+            <select value={formik.values.category} onChange={formik.handleChange} onBlur={formik.handleBlur} name='category' className={`w-full border p-2 rounded text-gray-900 ${formik.errors.category ? 'border-red-500' : ''}`}>
               <option value="select">Select a Category</option>
               <option value="fixed_expenses">Fixed Expenses</option>
               <option value="periodic_Expenses">Periodic Expenses</option>
@@ -186,7 +210,7 @@ export const Expenses = () => {
             </tr>
           </thead>
           <tbody>
-            {filteredExp.map((t: Transaction) => (
+            {filteredExp.map((t) => (
               <tr key={t.id} className='text-center border-t text-gray-400'>
                 <td className='p-2 border'>₹{t.amount}</td>
                 <td className='p-2 border'>{t.description}</td>
@@ -194,15 +218,13 @@ export const Expenses = () => {
                 <td className='p-2 border'>{t.category}</td>
                 <td className='p-2 border space-x-2'>
                   <button onClick={() => handleEdit(t)} className='bg-orange-400 hover:bg-orange-500 text-white px-3 py-1 rounded' type='button'>Edit</button>
-                  <button onClick={() => handleDelete(t.id)} className='bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded' type='button'>Delete</button>
+                  {/* <button onClick={() => handleDelete(t.id)} className='bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded' type='button'>Delete</button> */}
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-
-
 
       <button onClick={exportToexcel} className='text-gray-300 border-2 px-5 py-3 rounded-2xl mt-5 cursor-pointer' type='button'>
         Export to Excel
@@ -211,5 +233,3 @@ export const Expenses = () => {
     </div>
   );
 };
-
-// asdASD!@#123d 
