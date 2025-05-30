@@ -1,7 +1,7 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 interface Transaction {
-  id: number;
+  _id: any;
   description: string;
   amount: number;
   date: string;
@@ -29,11 +29,11 @@ const transactionsSlice = createSlice({
       localStorage.setItem("expenses", JSON.stringify(state.transactions));
     },
     deleteTransaction: (state, action: PayloadAction<number>) => {
-      state.transactions = state.transactions.filter(t => t.id !== action.payload);
+      state.transactions = state.transactions.filter(t => t._id !== action.payload);
       localStorage.setItem("expenses", JSON.stringify(state.transactions));
     },
     updateTransaction: (state, action: PayloadAction<Transaction>) => {
-      const index = state.transactions.findIndex(t => t.id === action.payload.id);
+      const index = state.transactions.findIndex(t => t._id === action.payload._id);
       if (index !== -1) {
         state.transactions[index] = action.payload;
         localStorage.setItem("expenses", JSON.stringify(state.transactions));

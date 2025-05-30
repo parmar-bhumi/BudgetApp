@@ -75,6 +75,7 @@ export const Incomes = () => {
   };
 
   const handleDelete = (id: number) => {
+    console.log(id);
     const isConfirmed = window.confirm("Are you sure to want to delete this Expenses ?");
     if (isConfirmed) {
       dispatch(deleteIncome(id))
@@ -147,7 +148,7 @@ const chartData = Object.entries(incomeDataByCategory).map(([name, value]) => ({
             </div>
     
             <div>
-              <button className='bg-blue-700 hover:bg-blue-800 text-white py-2 px-6 rounded-xl transition duration-300 m-5 ml-40'>{edit !== null ? 'Edit Income' : 'Add Income'}</button>
+              <button type='submit' className='bg-blue-700 hover:bg-blue-800 text-white py-2 px-6 rounded-xl transition duration-300 m-5 ml-40'>{edit !== null ? 'Update Income' : 'Add Income'}</button>
             </div>
             
           </form>
@@ -171,8 +172,8 @@ const chartData = Object.entries(incomeDataByCategory).map(([name, value]) => ({
                     <td className='p-2 border'>{t.date}</td>
                     <td className='p-2 border'>{t.category}</td>
                     <td className='p-2 border space-x-2'>
-                      <button onClick={() => handleEdit(t)} className='bg-orange-400 hover:bg-orange-500 text-white px-3 py-1 rounded'>Edit</button>
-                      <button onClick={() => handleDelete(t.id)} className='bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded'>Delete</button>
+                      <button type='button' onClick={() => handleEdit(t)} className='bg-orange-400 hover:bg-orange-500 text-white px-3 py-1 rounded'>Edit</button>
+                      <button type='button' onClick={() => handleDelete(t.id)} className='bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded'>Delete</button>
                     </td>
                   </tr>
                 ))}
@@ -180,7 +181,7 @@ const chartData = Object.entries(incomeDataByCategory).map(([name, value]) => ({
             </table>
           </div>
 
-          <button onClick={exportToexcel} className='text-gray-300 border-2 px-5 py-3 rounded-2xl mt-5 cursor-pointer'>
+          <button type='button' onClick={exportToexcel} className='text-gray-300 border-2 px-5 py-3 rounded-2xl mt-5 cursor-pointer'>
                 Export to Excel
           </button>
     

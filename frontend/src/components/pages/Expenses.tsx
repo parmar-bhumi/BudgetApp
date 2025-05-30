@@ -7,14 +7,7 @@ import { addTransaction, deleteTransaction, showTransactions, updateTransaction 
 import { useFormik } from 'formik';
 import { signUpSchema } from '@/schema';
 import axios from 'axios';
-
-interface Transaction {
-  id: number;
-  description: string;
-  amount: number;
-  date: string;
-  category: string;
-}
+import moment from 'moment';
 
 const initialValues = {
   description: "",
@@ -30,16 +23,16 @@ export const Expenses = () => {
   const [edit, setEdit] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
-  useEffect(() => {
-    localStorage.setItem("expenses", JSON.stringify(transactions));
-  }, [transactions]);
+  useEffect(()=>{
+    
+  },[])
 
   const formik = useFormik({
     initialValues,
     validationSchema: signUpSchema,
     onSubmit: async (values, actions) => {
       const transaction = {
-        id: edit || Date.now(),
+        // id: edit || Date.now(),
         description: values.description,
         amount: Number(values.amount),
         date: values.date,
@@ -72,9 +65,9 @@ export const Expenses = () => {
         const response = await axios.get(`${import.meta.env.VITE_APP_BASE_URL}/get-expenses`, {
           headers: { Authorization: `Bearer ${token}` }
         });
-        console.log("Data fetched:", response.data);
+        // console.log("Data fetched:", response.data);
         dispatch(showTransactions(response.data));
-        actions.resetForm();
+        actions.resetForm();    
       }
       catch (error) {
         console.error("Api error", error);
@@ -89,37 +82,33 @@ export const Expenses = () => {
     XLSX.writeFile(wb, "Incomes.xlsx");
   }
 
-  const handleEdit = (t: Transaction) => {
+  const handleEdit = (t:any) => {
     formik.setValues({
       // _id: number,
       description: t.description,
       amount: t.amount.toString(),
-      date: t.date,
+      date:moment(t.date).format("YYYY-MM-DD"),
       category: t.category,
     });
-    // setEdit(t.id);
+    setEdit(t._id);
   };
 
-  const handleDelete = async (_id: string) => {
-    // console.log(id);
+  const handleDelete = async (_id: any) => {
+    // console.log(_id);
     const token = localStorage.getItem("token");
-    const response = await axios.delete(`${import.meta.env.VITE_APP_BASE_URL}/delete-expense/${_id}`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    )
-    // const isConfirmed = window.confirm("Are you sure to want to delete this Expenses ?");
-    // if (isConfirmed) {
-    dispatch(deleteTransaction(response.data));
-    // }
+    const isConfirmed = window.confirm("Are you sure to want to delete this Expenses ?");
+    if (isConfirmed) {
+      await axios.delete(`${import.meta.env.VITE_APP_BASE_URL}/delete-expense/${_id}`,
+        {headers: {Authorization: `Bearer ${token}`}}
+      )
+    // dispatch(deleteTransaction(response.data));
+    }
   };
 
-  const filteredExp = searchQuery.length > 0 ? transactions.filter((expense: { description: string; category: string; }) =>
-    expense.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    expense.category?.toLowerCase().includes(searchQuery.toLowerCase())
-  ) : transactions;
+  // const filteredExp = searchQuery.length > 0 ? transactions.filter((expense: { description: string; category: string; }) =>
+  //   expense.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+  //   expense.category?.toLowerCase().includes(searchQuery.toLowerCase())
+  // ) : transactions;
 
   const totalExpenses = transactions.reduce((total, income) => total + (income.amount), 0)
 
@@ -130,15 +119,6 @@ export const Expenses = () => {
   }, {} as Record<string, number>);
 
   const chartData = Object.entries(expDataByCategory).map(([name, value]) => ({ name, value }));
-
-  const formatDateForInput = (value: string | number | Date) => {
-    const date = new Date(value);
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
-
 
   return (
     <div className='max-w-4xl mx-auto p-4 md:ml-90'>
@@ -156,6 +136,7 @@ export const Expenses = () => {
       </div>
 
       <form className='space-y-6' onSubmit={formik.handleSubmit}>
+
         <div className='flex flex-col md:flex-row md:space-x-4 space-y-4 md:space-y-0'>
           <div className='w-full'>
             <label className="block mb-1 font-medium text-gray-400">Name :</label>
@@ -174,7 +155,7 @@ export const Expenses = () => {
         <div className='flex flex-col md:flex-row md:space-x-4 space-y-4 md:space-y-0'>
           <div className='w-full'>
             <label className='block mb-1 font-medium text-gray-400'>Date :</label>
-            <input type="date" name='date' value={formik.values.date ? formatDateForInput(formik.values.date) : ''} onChange={formik.handleChange} onBlur={formik.handleBlur} className={`w-full border p-2 rounded text-gray-300 ${formik.errors.date ? 'border-red-500' : ''}`} />
+            <input type="date" name='date' value={formik.values.date} onChange={formik.handleChange} onBlur={formik.handleBlur} className={`w-full border p-2 rounded text-gray-300 ${formik.errors.date ? 'border-red-500' : ''}`} />
             {formik.errors.date && formik.touched.date ? (<p className='text-red-500'>{formik.errors.date}</p>) : null}
           </div>
 
@@ -193,7 +174,7 @@ export const Expenses = () => {
         </div>
 
         <div>
-          <button type='submit' className='bg-blue-700 hover:bg-blue-800 text-white py-2 px-6 rounded-xl transition duration-300 m-5 ml-40'>{edit !== null ? 'Edit expenses' : 'Add Expenses'}</button>
+          <button type='submit' className='bg-blue-700 hover:bg-blue-800 text-white py-2 px-6 rounded-xl transition duration-300 m-5 ml-40'>{edit !== null ? 'Update expenses' : 'Add Expenses'}</button>
         </div>
 
       </form>
@@ -210,15 +191,15 @@ export const Expenses = () => {
             </tr>
           </thead>
           <tbody>
-            {filteredExp.map((t) => (
-              <tr key={t.id} className='text-center border-t text-gray-400'>
+            {transactions.map((t,index) => (
+              <tr key={index} className='text-center border-t text-gray-400'>
                 <td className='p-2 border'>₹{t.amount}</td>
                 <td className='p-2 border'>{t.description}</td>
                 <td className='p-2 border'>{t.date}</td>
                 <td className='p-2 border'>{t.category}</td>
                 <td className='p-2 border space-x-2'>
                   <button onClick={() => handleEdit(t)} className='bg-orange-400 hover:bg-orange-500 text-white px-3 py-1 rounded' type='button'>Edit</button>
-                  {/* <button onClick={() => handleDelete(t.id)} className='bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded' type='button'>Delete</button> */}
+                  <button onClick={() => handleDelete(t._id)} className='bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded' type='button'>Delete</button>
                 </td>
               </tr>
             ))}
